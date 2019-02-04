@@ -14,6 +14,7 @@ import random
 
 ### USEFUL UTILITY FUNCTIONS ###
 
+# Takes data from `filename` and returns a data object
 def importDataFromCSV(filename):
     data = []
     with open(filename, newline = '') as file:
@@ -25,15 +26,22 @@ def importDataFromCSV(filename):
             sys.exit('file {}, line {}: {}'.format(filename, reader.line_num, e))
     return data
 
-def splitTrainingTesting(dataset):
-    size_train = int(len(dataset) * 0.70) # TODO find appropriate split ratio
+# Takes dataset and returns a training set and a testing set split by splitRatio
+# For default splitRatio (0.70), a random 70% of the data will be in the training 
+# set and the remaining 30% will be in the testing set
+def splitTrainingTesting(dataset, splitRatio = 0.70):
+    assert (splitRatio < 1.00 and splitRatio > 0.00)
+    size_train = int(len(dataset) * splitRatio)
     train = []
     test = dataset[:]
     while len(train) < size_train:
         train.append(test.pop(random.randrange(len(test))))
     return train, test
 
-def splitByCol(dataset, colIndex):
+# Splits a data set into a dictionary of the form:
+# `attribute: [members with that attribute]`
+# where attribute is given by the colIndex (default last item)
+def splitByCol(dataset, colIndex = -1):
     split = {}
     for i in range(len(dataset)):
         row = dataset[i]
@@ -57,9 +65,8 @@ def main(arg):
     # for row in test:
     #     print (row)
     # split = splitByCol(train, 6) # 6 is the index of religion in the dataset
-    # print ("Split the dataset into a dictionary of attribute: [members with that attribute]")
+    # print ("Split the dataset into a dictionary of `attribute: [members with that attribute]`")
     # print (split)
     # print (norm(73, 6.2).pdf(71.5)) # norm(mean, stdev).pdf(x)
-    
     
 main(sys.argv[1])
