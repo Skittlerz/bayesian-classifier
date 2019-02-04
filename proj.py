@@ -10,6 +10,7 @@ import csv
 import random
 # from statistics import mean
 # from statistics import stdev
+# from scipy.stats import norm
 
 ### USEFUL UTILITY FUNCTIONS ###
 
@@ -32,11 +33,20 @@ def splitTrainingTesting(dataset):
         train.append(test.pop(random.randrange(len(test))))
     return train, test
 
+def splitByCol(dataset, colIndex):
+    split = {}
+    for i in range(len(dataset)):
+        row = dataset[i]
+        if row[colIndex] not in split:
+            split[row[colIndex]] = []
+        split[row[colIndex]].append(row)
+    return split
+
 def main(arg):
     dataset = importDataFromCSV(arg)
     train, test = splitTrainingTesting(dataset)
-    print ("Set Sizes: ")
-    print ("Training set: " + str(len(train)) + " | Testing Set: " + str(len(test)) + " | Data set: " + str(len(dataset)))
+    # print ("Set Sizes: ")
+    # print ("Training set: " + str(len(train)) + " | Testing Set: " + str(len(test)) + " | Data set: " + str(len(dataset)))
     # print ("Data set: ")
     # for row in dataset:
     #     print (row)
@@ -46,5 +56,10 @@ def main(arg):
     # print ("Testing set: ")
     # for row in test:
     #     print (row)
+    # split = splitByCol(train, 6) # 6 is the index of religion in the dataset
+    # print ("Split the dataset into a dictionary of attribute: [members with that attribute]")
+    # print (split)
+    # print (norm(73, 6.2).pdf(71.5)) # norm(mean, stdev).pdf(x)
+    
     
 main(sys.argv[1])

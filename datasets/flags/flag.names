@@ -47,9 +47,11 @@
   15. white    same for white
   16. black    same for black
   17. orange   same for orange (also brown)
-  18. mainhue  predominant colour in the flag (tie-breaks decided by taking
+  ~18. mainhue  predominant colour in the flag (tie-breaks decided by taking
                the topmost hue, if that fails then the most central hue,
                and if that fails the leftmost hue)
+  18. mainhue  0 for red, 1 for green, 2 for blue, 3 for gold, 4 for white, 
+               5 for black, 6 for orange
   19. circles  Number of circles in the flag
   20. crosses  Number of (upright) crosses
   21. saltires Number of diagonal crosses
@@ -62,9 +64,9 @@
                present, 0 otherwise
   28. text     1 if any letters or writing on the flag (e.g., a motto or
                slogan), 0 otherwise
-  29. topleft  colour in the top-left corner (moving right to decide 
+  ~29. topleft  colour in the top-left corner (moving right to decide 
                tie-breaks)
-  30. botright Colour in the bottom-left corner (moving left to decide 
+  ~30. botright Colour in the bottom-left corner (moving left to decide 
                tie-breaks)
 
 8. Missing values: None
