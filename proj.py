@@ -3,6 +3,10 @@
 #
 #   To Run:
 #     `python proj.py filename_of_csv_dataset`
+#   Dependencies:
+#     statistics, scipy
+#     `pip install statistics` 
+#     `pip install scipy`      
 #
 
 import sys
