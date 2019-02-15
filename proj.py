@@ -2,7 +2,7 @@
 #   CS 421 Project - Naive Bayes implementation
 #
 #   To Run:
-#     `python3 proj.py filename_of_csv_dataset`
+#     `python proj.py filename_of_csv_dataset`
 #
 
 import sys
@@ -17,7 +17,7 @@ import random
 # Takes data from `filename` and returns a data object
 def importDataFromCSV(filename):
     data = []
-    with open(filename, newline = '') as file:
+    with open(filename) as file:
         raw_data = csv.reader(file, delimiter = ',')
         try: 
             for row in raw_data:
