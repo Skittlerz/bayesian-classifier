@@ -12,6 +12,7 @@
 import sys
 import csv
 import random
+import math
 # from statistics import mean
 # from statistics import stdev
 # from scipy.stats import norm
@@ -54,23 +55,122 @@ def splitByCol(dataset, colIndex = -1):
         split[row[colIndex]].append(row)
     return split
 
+ # Returns simple mean: sum of elements / num of elements
+def mean(numbers):
+    sum = 0
+    for num in numbers:
+        #could have null values
+        if num:
+            sum += float(num)
+    return sum/float(len(numbers))
+
+ # Returns standard deviation for N values: sqr root[ sum((x - mean)^2) / N - 1 ]
+def standardDeviation(numbers):
+    avg = mean(numbers)
+    sum = 0
+    for num in numbers:
+        if num:
+            sum += pow(float(num)-avg,2)
+    variance = sum / float(len(numbers)-1)
+    return math.sqrt(variance)
+
+ # Returns array of [mean, standard deviation] for each attribute (column in the dataset)
+def summarize(dataset, targetClassCol):
+    summaries = [(mean(attribute), standardDeviation(attribute)) for attribute in zip(*dataset)]
+	#remove column to be predicted
+    del summaries[targetClassCol]
+    return summaries
+
+ # Group data rows by class value and summarize (compute mean, st dev)
+def summarizeByClass(dataset, targetClassCol):
+    separated = splitByCol(dataset, targetClassCol)
+    summaries = {}
+    for classValue, instances in separated.items():
+        summaries[classValue] = summarize(instances, targetClassCol)
+    return summaries
+
+"""
+Prediction Data Flow:
+getPredictions  --> predict --> calculateClassProbabilities --> calculateProbability
+"""
+
+ # Probability density function
+def calculateProbability(x, mean, stdev):
+    exponent = math.exp(-(math.pow(float(x)-float(mean),2)/(2*math.pow(float(stdev),2))))
+    return (1/(math.sqrt(2*math.pi)*stdev))*exponent
+
+def calculateClassProbabilities(summaries, inputVector):
+    probabilities = {}
+    for classValue, classSummaries in summaries.iteritems():
+        probabilities[classValue] = 1
+        for i in range(len(classSummaries)):
+            mean, stdev = classSummaries[i]
+            x = inputVector[i]
+            probabilities[classValue] *= calculateProbability(x, mean, stdev)
+    return probabilities
+
+def predict(summaries, inputVector):
+    probabilities = calculateClassProbabilities(summaries, inputVector)
+    #initialize with default values
+    bestLabel, bestProb = None, -1
+    for classValue, probability in probabilities.items():
+        if bestLabel is None or probability > bestProb:
+            bestProb = probability
+            bestLabel = classValue
+    return bestLabel
+
+
+def getPredictions(summaries, testSet):
+    predictions = []
+    for i in range(len(testSet)):
+        result = predict(summaries, testSet[i])
+        predictions.append(result)
+    return predictions
+
+def getAccuracy(testSet, predictions):
+    correct = 0
+    for x in range(len(testSet)):
+        if testSet[x][-1] == predictions[x]:
+            correct += 1
+    return (correct/float(len(testSet)))*100.0
+
 def main(arg):
     dataset = importDataFromCSV(arg)
     train, test = splitTrainingTesting(dataset)
+    print('Split {0} rows into train = {1} and test = {2} rows'.format(len(dataset),len(train),len(test)))
+    print(train)
+    #prepare model
+    targetClassCol = 5
+    #this will work sometimes - depends on what random data is pulled for the test set
+    #otherwise program halts because of a divide-by-zero error
+    #from what I can deduce it is the columns that are filled with [0,1] as possible values that are causing the issue
+    summaries = summarizeByClass(train, targetClassCol)
+    print(summaries)
+
+    #test model
+    #predictions = getPredictions(summaries, test)
+    #accuracy = getAccuracy(test, predictions)
+    #print('Accuracy: {0}%'.format(accuracy))
+
     # print ("Set Sizes: ")
     # print ("Training set: " + str(len(train)) + " | Testing Set: " + str(len(test)) + " | Data set: " + str(len(dataset)))
     # print ("Data set: ")
     # for row in dataset:
     #     print (row)
-    # print ("Training set: ")
-    # for row in train:
-    #     print (row)
-    # print ("Testing set: ")
-    # for row in test:
-    #     print (row)
+    #print ("Training set: ")
+    #for row in train:
+    #    print (row)
+    #print ("Testing set: ")
+    #for row in test:
+    #    print (row)
     # split = splitByCol(train, 6) # 6 is the index of religion in the dataset
     # print ("Split the dataset into a dictionary of `attribute: [members with that attribute]`")
     # print (split)
     # print (norm(73, 6.2).pdf(71.5)) # norm(mean, stdev).pdf(x)
     
-main(sys.argv[1])
+#main(sys.arg[1])
+
+#temporary - just so I can run this from debugger in VS
+#flagCopy has string values removed
+filename = "datasets/flags/flagCopy.data"
+main(filename)
