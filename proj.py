@@ -45,14 +45,14 @@ def splitTrainingTesting(dataset, splitRatio = 0.70):
 
 # Splits a data set into a dictionary of the form:
 # `attribute: [members with that attribute]`
-# where attribute is given by the colIndex (default last item)
-def splitByCol(dataset, colIndex = -1):
+# where attribute is given by the targetClassCol (default last item)
+def splitByCol(dataset, targetClassCol = -1):
     split = {}
     for i in range(len(dataset)):
         row = dataset[i]
-        if row[colIndex] not in split:
-            split[row[colIndex]] = []
-        split[row[colIndex]].append(row)
+        if row[targetClassCol] not in split:
+            split[row[targetClassCol]] = []
+        split[row[targetClassCol]].append(row)
     return split
 
  # Returns simple mean: sum of elements / num of elements
@@ -99,6 +99,9 @@ def calculateProbability(x, mean, stdev):
     exponent = math.exp(-(math.pow(float(x)-float(mean),2)/(2*math.pow(float(stdev),2))))
     return (1/(math.sqrt(2*math.pi)*stdev))*exponent
 
+def calculateProbabilityDiscrete(x, inputVector):
+    return float(inputVector.count(x)) / len(inputVector)
+
 def calculateClassProbabilities(summaries, inputVector):
     probabilities = {}
     for classValue, classSummaries in summaries.iteritems():
@@ -109,8 +112,24 @@ def calculateClassProbabilities(summaries, inputVector):
             probabilities[classValue] *= calculateProbability(x, mean, stdev)
     return probabilities
 
+def calculateClassProbabilitiesDiscrete(inputVector):
+    probabilities = {}
+    for value in set(inputVector):
+        probabilities[value] = calculateProbabilityDiscrete(value, inputVector)
+    return probabilities
+
 def predict(summaries, inputVector):
     probabilities = calculateClassProbabilities(summaries, inputVector)
+    #initialize with default values
+    bestLabel, bestProb = None, -1
+    for classValue, probability in probabilities.items():
+        if bestLabel is None or probability > bestProb:
+            bestProb = probability
+            bestLabel = classValue
+    return bestLabel
+
+def predictDiscrete(inputVector):
+    probabilities = calculateClassProbabilitiesDiscrete(inputVector)
     #initialize with default values
     bestLabel, bestProb = None, -1
     for classValue, probability in probabilities.items():
@@ -127,10 +146,17 @@ def getPredictions(summaries, testSet):
         predictions.append(result)
     return predictions
 
-def getAccuracy(testSet, predictions):
+def getPredictionsDiscrete(testSet):
+    predictions = []
+    for i in range(len(testSet)):
+        result = predictDiscrete(testSet[i])
+        predictions.append(result)
+    return predictions
+
+def getAccuracy(testSet, predictions, targetClassCol):
     correct = 0
     for x in range(len(testSet)):
-        if testSet[x][-1] == predictions[x]:
+        if testSet[x][targetClassCol] == predictions[x]:
             correct += 1
     return (correct/float(len(testSet)))*100.0
 
@@ -138,19 +164,19 @@ def main(arg):
     dataset = importDataFromCSV(arg)
     train, test = splitTrainingTesting(dataset)
     print('Split {0} rows into train = {1} and test = {2} rows'.format(len(dataset),len(train),len(test)))
-    print(train)
+    # print(train)
     #prepare model
     targetClassCol = 5
     #this will work sometimes - depends on what random data is pulled for the test set
     #otherwise program halts because of a divide-by-zero error
     #from what I can deduce it is the columns that are filled with [0,1] as possible values that are causing the issue
-    summaries = summarizeByClass(train, targetClassCol)
-    print(summaries)
+    # summaries = summarizeByClass(train, targetClassCol)
+    # print(summaries)
 
     #test model
-    #predictions = getPredictions(summaries, test)
-    #accuracy = getAccuracy(test, predictions)
-    #print('Accuracy: {0}%'.format(accuracy))
+    predictions = getPredictionsDiscrete(test)
+    accuracy = getAccuracy(test, predictions, targetClassCol)
+    print('Accuracy: {0}%'.format(accuracy))
 
     # print ("Set Sizes: ")
     # print ("Training set: " + str(len(train)) + " | Testing Set: " + str(len(test)) + " | Data set: " + str(len(dataset)))
