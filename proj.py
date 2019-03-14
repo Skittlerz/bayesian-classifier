@@ -15,7 +15,7 @@ import random
 import math
 # from statistics import mean
 # from statistics import stdev
-# from scipy.stats import norm
+from scipy.stats import norm
 
 ### USEFUL UTILITY FUNCTIONS ###
 
@@ -163,7 +163,38 @@ def getAccuracy(testSet, predictions, targetClassCol):
             correct += 1
     return (correct/float(len(testSet)))*100.0
 
+def test(filename):
+    dataset = importDataFromCSV(filename)
+    assert (dataset)
+    train, test = splitTrainingTesting(dataset)
+    assert (train)
+    assert (test)
+    split = splitByCol(test)
+    assert (split)
+    avg = mean([1, 2, 3, 4, 5])
+    assert (avg == 3.0)
+    # avg = mean([])
+    # print (avg)
+    # assert (avg == 0)
+    standev = standardDeviation([1, 1, 2, 3, 3])
+    assert (standev == 1.0)
+    # standev = standardDeviation([])
+    # print (standev)
+    # assert (standev == 0.0)
+    p_x = norm(3, 1.0).pdf(2.0) # norm(mean, stdev).pdf(x)
+    assert (0.24 < p_x < 0.25)
+    targetClassCol = 5
+    # summary = summarize(test, targetClassCol)
+    # assert (summary)
+    # class_summary = summarizeByClass(test, targetClassCol)
+    # assert (class_summary)
+    p_x = calculateProbability(2.0, 3, 1.0)
+    assert (0.24 < p_x < 0.25)
+    p_d = calculateProbabilityDiscrete(1, [1, 2, 3, 1, 3, 2, 5, 6, 4, 1])
+    assert (p_d == 0.3)
+
 def main(arg):
+    # test(arg)
     dataset = importDataFromCSV(arg)
     train, test = splitTrainingTesting(dataset)
     print('Split {0} rows into train = {1} and test = {2} rows'.format(len(dataset),len(train),len(test)))
@@ -177,26 +208,10 @@ def main(arg):
     # print(summaries)
 
     #test model
-    predictions = getPredictionsDiscrete(test)
+    predictions = getPredictionsDiscrete(train)
     accuracy = getAccuracy(test, predictions, targetClassCol)
     print('Accuracy: {0}%'.format(accuracy))
 
-    # print ("Set Sizes: ")
-    # print ("Training set: " + str(len(train)) + " | Testing Set: " + str(len(test)) + " | Data set: " + str(len(dataset)))
-    # print ("Data set: ")
-    # for row in dataset:
-    #     print (row)
-    #print ("Training set: ")
-    #for row in train:
-    #    print (row)
-    #print ("Testing set: ")
-    #for row in test:
-    #    print (row)
-    # split = splitByCol(train, 6) # 6 is the index of religion in the dataset
-    # print ("Split the dataset into a dictionary of `attribute: [members with that attribute]`")
-    # print (split)
-    # print (norm(73, 6.2).pdf(71.5)) # norm(mean, stdev).pdf(x)
-    
 #main(sys.arg[1])
 
 #temporary - just so I can run this from debugger in VS
