@@ -115,7 +115,10 @@ def calculateClassProbabilities(summaries, inputVector):
 def calculateClassProbabilitiesDiscrete(inputVector):
     probabilities = {}
     for value in set(inputVector):
-        probabilities[value] = calculateProbabilityDiscrete(value, inputVector)
+        if value in probabilities:
+            probabilities[value] *= calculateProbabilityDiscrete(value, inputVector)
+        else:
+            probabilities[value] = calculateProbabilityDiscrete(value, inputVector)
     return probabilities
 
 def predict(summaries, inputVector):
