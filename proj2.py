@@ -62,11 +62,12 @@ def calculateAllProbabilities(row, train, target_attr = -1):
         if len(split[attr]) is 0:
             probs[attr] = 0
             continue
-        probs[attr] = 1
+        col = [train_row[target_attr] for train_row in train]
+        probs[attr] = calculateProbability(attr, col)
         for i in range(len(split[attr][0])):
             if i == target_attr:
                 continue
-            col = [col_val[i] for col_val in split[attr]]
+            col = [train_row[i] for train_row in split[attr]]
             probs[attr] *= calculateProbability(row[i], col)
     return probs
 
@@ -105,7 +106,7 @@ def getAccuracy(test, predictions, target_attr = -1):
 # main
 def main():
     dataset = importDataFromCSV("datasets/flags/flag.data")
-    num_trials = 100
+    num_trials = 1000
     target = 6
     max_ac = 0
     min_ac = 100
@@ -121,7 +122,7 @@ def main():
         avg_ac += accuracy / num_trials
         if max_ac < accuracy:
             max_ac = accuracy
-        elif min_ac > accuracy:
+        if min_ac > accuracy:
             min_ac = accuracy
     end = process_time()
     rand_start = process_time()
@@ -132,7 +133,7 @@ def main():
         rand_avg_ac += rand_accuracy / num_trials
         if rand_max_ac < rand_accuracy:
             rand_max_ac = rand_accuracy
-        elif rand_min_ac > rand_accuracy:
+        if rand_min_ac > rand_accuracy:
             rand_min_ac = rand_accuracy
     rand_end = process_time()
     print ("Bayes Accuracy Average: " + str(round(avg_ac, 4)) + "%")
