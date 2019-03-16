@@ -1,21 +1,10 @@
 #
 #   CS 421 Project - Naive Bayes implementation
 #
-#   To Run:
-#     `python proj.py filename_of_csv_dataset`
-#   Dependencies:
-#     statistics, scipy
-#     `pip install statistics` 
-#     `pip install scipy`      
-#
 
-import sys
 import csv
-import random
-import math
-# from statistics import mean
-# from statistics import stdev
-from scipy.stats import norm
+from random import randint
+from time import process_time
 
 ### USEFUL UTILITY FUNCTIONS ###
 
@@ -35,12 +24,12 @@ def importDataFromCSV(filename):
 # For default splitRatio (0.70), a random 70% of the data will be in the training 
 # set and the remaining 30% will be in the testing set
 def splitTrainingTesting(dataset, splitRatio = 0.70):
-    assert (splitRatio < 1.00 and splitRatio > 0.00)
+    assert (0.00 < splitRatio < 1.00)
     size_train = int(len(dataset) * splitRatio)
     train = []
     test = dataset[:]
     while len(train) < size_train:
-        train.append(test.pop(random.randrange(len(test))))
+        train.append(test.pop(randint(0, len(test) - 1)))
     return train, test
 
 # Splits a data set into a dictionary of the form:
@@ -55,166 +44,129 @@ def splitByCol(dataset, targetClassCol = -1):
         split[row[targetClassCol]].append(row)
     return split
 
- # Returns simple mean: sum of elements / num of elements
-def mean(numbers):
-    sum = 0
-    for num in numbers:
-        #could have null values
-        if num:
-            sum += float(num)
-    return sum/float(len(numbers))
+# Calculates the discrete probability of x appearing in collection
+# Returns the value as a float
+def calculateProbability(x, collection):
+    if collection.count(x) > 0:
+        return float(collection.count(x)) / len(collection)
+    else:
+        return 0.0000000001
 
- # Returns standard deviation for N values: sqr root[ sum((x - mean)^2) / N - 1 ]
-def standardDeviation(numbers):
-    avg = mean(numbers)
-    sum = 0
-    for num in numbers:
-        if num:
-            sum += pow(float(num)-avg,2)
-    variance = sum / float(len(numbers)-1)
-    return math.sqrt(variance)
+# Creates a dictionary of the form:
+# `attribute: probability for that attribute given the row data`
+# using the probabilities given by the columns in the training dataset
+def calculateAllProbabilities(row, train, target_attr = -1):
+    probs = {}
+    split = splitByCol(train, target_attr)
+    for attr in split:
+        if len(split[attr]) is 0:
+            probs[attr] = 0
+            continue
+        col = [train_row[target_attr] for train_row in train]
+        probs[attr] = calculateProbability(attr, col)
+        for i in range(len(split[attr][0])):
+            if i == target_attr:
+                continue
+            col = [train_row[i] for train_row in split[attr]]
+            probs[attr] *= calculateProbability(row[i], col)
+    return probs
 
- # Returns array of [mean, standard deviation] for each attribute (column in the dataset)
-def summarize(dataset, targetClassCol):
-    summaries = [(mean(attribute), standardDeviation(attribute)) for attribute in zip(*dataset)]
-	#remove column to be predicted
-    del summaries[targetClassCol]
-    return summaries
+# Comes up with a predicted target value based on the data in the training dataset
+def predict(row, train, target_attr = -1):
+    probabilities = calculateAllProbabilities(row, train, target_attr)
+    high_attr, high_prob = None, -1.0
+    for attr, prob in probabilities.items():
+        if prob > high_prob:
+            high_prob = prob
+            high_attr = attr
+    return high_attr
 
- # Group data rows by class value and summarize (compute mean, st dev)
-def summarizeByClass(dataset, targetClassCol):
-    separated = splitByCol(dataset, targetClassCol)
-    summaries = {}
-    for classValue, instances in separated.items():
-        summaries[classValue] = summarize(instances, targetClassCol)
-    return summaries
-
-"""
-Prediction Data Flow:
-getPredictions  --> predict --> calculateClassProbabilities --> calculateProbability
-"""
-
- # Probability density function
-def calculateProbability(x, mean, stdev):
-    exponent = math.exp(-(math.pow(float(x)-float(mean),2)/(2*math.pow(float(stdev),2))))
-    return (1/(math.sqrt(2*math.pi)*stdev))*exponent
-
-def calculateProbabilityDiscrete(x, inputVector):
-    return float(inputVector.count(x)) / len(inputVector)
-
-def calculateClassProbabilities(summaries, inputVector):
-    probabilities = {}
-    for classValue, classSummaries in summaries.iteritems():
-        probabilities[classValue] = 1
-        for i in range(len(classSummaries)):
-            mean, stdev = classSummaries[i]
-            x = inputVector[i]
-            probabilities[classValue] *= calculateProbability(x, mean, stdev)
-    return probabilities
-
-def calculateClassProbabilitiesDiscrete(inputVector):
-    probabilities = {}
-    for value in set(inputVector):
-        if value in probabilities:
-            probabilities[value] *= calculateProbabilityDiscrete(value, inputVector)
-        else:
-            probabilities[value] = calculateProbabilityDiscrete(value, inputVector)
-    return probabilities
-
-def predict(summaries, inputVector):
-    probabilities = calculateClassProbabilities(summaries, inputVector)
-    #initialize with default values
-    bestLabel, bestProb = None, -1
-    for classValue, probability in probabilities.items():
-        if bestLabel is None or probability > bestProb:
-            bestProb = probability
-            bestLabel = classValue
-    return bestLabel
-
-def predictDiscrete(inputVector):
-    probabilities = calculateClassProbabilitiesDiscrete(inputVector)
-    #initialize with default values
-    bestLabel, bestProb = None, -1
-    for classValue, probability in probabilities.items():
-        if bestLabel is None or probability > bestProb:
-            bestProb = probability
-            bestLabel = classValue
-    return bestLabel
-
-
-def getPredictions(summaries, testSet):
+# Gets all of the predictions for each value in the test dataset
+def getPredictions(train, test, target_attr = -1):
     predictions = []
-    for i in range(len(testSet)):
-        result = predict(summaries, testSet[i])
-        predictions.append(result)
+    for row in test:
+        predictions.append(predict(row, train, target_attr))
     return predictions
 
-def getPredictionsDiscrete(testSet):
+# For testing purposes; gets a random prediction from the domain for each value in the test dataset
+def getRandomPredictions(test, domain):
     predictions = []
-    for i in range(len(testSet)):
-        result = predictDiscrete(testSet[i])
-        predictions.append(result)
+    for row in test:
+        predictions.append(domain[randint(0, len(domain) - 1)])
     return predictions
 
-def getAccuracy(testSet, predictions, targetClassCol):
-    correct = 0
-    for x in range(len(testSet)):
-        if testSet[x][targetClassCol] == predictions[x]:
-            correct += 1
-    return (correct/float(len(testSet)))*100.0
+# Gets the accuracy of the predictions as a percentage
+def getAccuracy(test, predictions, target_attr = -1):
+    correct = 0.0
+    for i in range(len(test)):
+        if test[i][target_attr] == predictions[i]:
+            correct += 1.0
+    return (correct / len(test)) * 100.0
 
-def test(filename):
-    dataset = importDataFromCSV(filename)
+# test
+def test():
+    dataset = importDataFromCSV("datasets/test.csv")
     assert (dataset)
     train, test = splitTrainingTesting(dataset)
-    assert (train)
-    assert (test)
-    split = splitByCol(test)
-    assert (split)
-    avg = mean([1, 2, 3, 4, 5])
-    assert (avg == 3.0)
-    # avg = mean([])
-    # print (avg)
-    # assert (avg == 0)
-    standev = standardDeviation([1, 1, 2, 3, 3])
-    assert (standev == 1.0)
-    # standev = standardDeviation([])
-    # print (standev)
-    # assert (standev == 0.0)
-    p_x = norm(3, 1.0).pdf(2.0) # norm(mean, stdev).pdf(x)
-    assert (0.24 < p_x < 0.25)
-    targetClassCol = 5
-    # summary = summarize(test, targetClassCol)
-    # assert (summary)
-    # class_summary = summarizeByClass(test, targetClassCol)
-    # assert (class_summary)
-    p_x = calculateProbability(2.0, 3, 1.0)
-    assert (0.24 < p_x < 0.25)
-    p_d = calculateProbabilityDiscrete(1, [1, 2, 3, 1, 3, 2, 5, 6, 4, 1])
-    assert (p_d == 0.3)
+    assert (train and test and len(train) == 7 and len(test) == 3)
+    split = splitByCol(dataset)
+    assert (split and len(split) == 7)
+    prob = calculateProbability("2", dataset[0])
+    assert (prob and prob == 0.4)
+    probs = calculateAllProbabilities(dataset[0], dataset)
+    assert (probs and len(probs) == 7)
+    pred = predict(dataset[0], dataset)
+    assert (pred and pred == "3")
+    preds = getPredictions(dataset, dataset)
+    assert (preds and preds == ["3", "2", "7", "2", "7", "8", "4", "3", "0", "1"])
+    rand_preds = getRandomPredictions(dataset, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"])
+    assert (rand_preds)
+    ac = getAccuracy(dataset, preds)
+    assert (ac and ac == 100.0)
 
-def main(arg):
-    # test(arg)
-    dataset = importDataFromCSV(arg)
-    train, test = splitTrainingTesting(dataset)
-    print('Split {0} rows into train = {1} and test = {2} rows'.format(len(dataset),len(train),len(test)))
-    # print(train)
-    #prepare model
-    targetClassCol = 5
-    #this will work sometimes - depends on what random data is pulled for the test set
-    #otherwise program halts because of a divide-by-zero error
-    #from what I can deduce it is the columns that are filled with [0,1] as possible values that are causing the issue
-    # summaries = summarizeByClass(train, targetClassCol)
-    # print(summaries)
+# main
+def main():
+    dataset = importDataFromCSV("datasets/flags/flag.data")
+    num_trials = 100
+    target = 6
+    max_ac = 0
+    min_ac = 100
+    avg_ac = 0
+    rand_max_ac = 0
+    rand_min_ac = 100
+    rand_avg_ac = 0
+    start = process_time()
+    for i in range(num_trials):
+        train, test = splitTrainingTesting(dataset)
+        predictions = getPredictions(train, test, target)
+        accuracy = getAccuracy(test, predictions, target)
+        avg_ac += accuracy / num_trials
+        if max_ac < accuracy:
+            max_ac = accuracy
+        if min_ac > accuracy:
+            min_ac = accuracy
+    end = process_time()
+    print ("Bayes Accuracy Average: " + str(round(avg_ac, 4)) + "%")
+    print ("Bayes Accuracy Maximum: " + str(round(max_ac, 4)) + "%")
+    print ("Bayes Accuracy Minimum: " + str(round(min_ac, 4)) + "%")
+    print ("Bayes Accuracy Time: " + str(round(end - start, 4)) + " seconds")
+    col = [row[target] for row in dataset]
+    domain = list(set(col))
+    rand_start = process_time()
+    for i in range(num_trials):
+        train, test = splitTrainingTesting(dataset)
+        rand_predictions = getRandomPredictions(test, domain)
+        rand_accuracy = getAccuracy(test, rand_predictions, target)
+        rand_avg_ac += rand_accuracy / num_trials
+        if rand_max_ac < rand_accuracy:
+            rand_max_ac = rand_accuracy
+        if rand_min_ac > rand_accuracy:
+            rand_min_ac = rand_accuracy
+    rand_end = process_time()
+    print ("Random Accuracy Average: " + str(round(rand_avg_ac, 4)) + "%")
+    print ("Random Accuracy Maximum: " + str(round(rand_max_ac, 4)) + "%")
+    print ("Random Accuracy Minimum: " + str(round(rand_min_ac, 4)) + "%")
+    print ("Random Accuracy Time: " + str(round(rand_end - rand_start, 4)) + " seconds")
 
-    #test model
-    predictions = getPredictionsDiscrete(train)
-    accuracy = getAccuracy(test, predictions, targetClassCol)
-    print('Accuracy: {0}%'.format(accuracy))
-
-#main(sys.arg[1])
-
-#temporary - just so I can run this from debugger in VS
-#flagCopy has string values removed
-filename = "datasets/flags/flagCopy.data"
-main(filename)
+test() 
+main() 
