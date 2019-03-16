@@ -1,3 +1,6 @@
+#
+#   CS 421 Project - Naive Bayes implementation
+#
 
 import csv
 from random import randint
@@ -49,6 +52,9 @@ def calculateProbability(x, collection):
     else:
         return 0.0000000001
 
+# Creates a dictionary of the form:
+# `attribute: probability for that attribute given the row data`
+# using the probabilities given by the columns in the training dataset
 def calculateAllProbabilities(row, train, target_attr = -1):
     probs = {}
     split = splitByCol(train, target_attr)
@@ -64,6 +70,7 @@ def calculateAllProbabilities(row, train, target_attr = -1):
             probs[attr] *= calculateProbability(row[i], col)
     return probs
 
+# Comes up with a predicted target value based on the data in the training dataset
 def predict(row, train, target_attr = -1):
     probabilities = calculateAllProbabilities(row, train, target_attr)
     high_attr, high_prob = None, -1.0
@@ -73,18 +80,21 @@ def predict(row, train, target_attr = -1):
             high_attr = attr
     return high_attr
 
+# Gets all of the predictions for each value in the test dataset
 def getPredictions(train, test, target_attr = -1):
     predictions = []
     for row in test:
         predictions.append(predict(row, train, target_attr))
     return predictions
 
+# For testing purposes; gets a random prediction from the domain for each value in the test dataset
 def getRandomPredictions(test, domain):
     predictions = []
     for row in test:
         predictions.append(domain[randint(0, len(domain) - 1)])
     return predictions
 
+# Gets the accuracy of the predictions as a percentage
 def getAccuracy(test, predictions, target_attr = -1):
     correct = 0.0
     for i in range(len(test)):
@@ -92,6 +102,7 @@ def getAccuracy(test, predictions, target_attr = -1):
             correct += 1.0
     return (correct / len(test)) * 100.0
 
+# main
 def main():
     dataset = importDataFromCSV("datasets/flags/flag.data")
     num_trials = 100
