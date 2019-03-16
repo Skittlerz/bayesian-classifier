@@ -5,4 +5,11 @@ To Run:
   `python3 proj.py`
   
 # todo
-  Literally everything
+  Increase accuracy
+
+# notes
+  - Naive bayesian classifier implementation
+  - Currently built for use with predicting religion based on flag data but able to be extended to any type of data
+  - Uses the following libraries: csv, random, and time
+  - User may edit the following parameters: data.csv file, number of trials, target column (i.e. which column is to be predicted)
+  - Also contains a brief random guess algorithm for comparison purposes

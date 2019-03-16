@@ -106,7 +106,7 @@ def getAccuracy(test, predictions, target_attr = -1):
 # main
 def main():
     dataset = importDataFromCSV("datasets/flags/flag.data")
-    num_trials = 1000
+    num_trials = 10
     target = 6
     max_ac = 0
     min_ac = 100
@@ -125,10 +125,16 @@ def main():
         if min_ac > accuracy:
             min_ac = accuracy
     end = process_time()
+    print ("Bayes Accuracy Average: " + str(round(avg_ac, 4)) + "%")
+    print ("Bayes Accuracy Maximum: " + str(round(max_ac, 4)) + "%")
+    print ("Bayes Accuracy Minimum: " + str(round(min_ac, 4)) + "%")
+    print ("Bayes Accuracy Time: " + str(round(end - start, 4)) + " seconds")
+    col = [row[target] for row in dataset]
+    domain = list(set(col))
     rand_start = process_time()
     for i in range(num_trials):
         train, test = splitTrainingTesting(dataset)
-        rand_predictions = getRandomPredictions(test, ["0", "1", "2", "3", "4", "5", "6"])
+        rand_predictions = getRandomPredictions(test, domain)
         rand_accuracy = getAccuracy(test, rand_predictions, target)
         rand_avg_ac += rand_accuracy / num_trials
         if rand_max_ac < rand_accuracy:
@@ -136,10 +142,6 @@ def main():
         if rand_min_ac > rand_accuracy:
             rand_min_ac = rand_accuracy
     rand_end = process_time()
-    print ("Bayes Accuracy Average: " + str(round(avg_ac, 4)) + "%")
-    print ("Bayes Accuracy Maximum: " + str(round(max_ac, 4)) + "%")
-    print ("Bayes Accuracy Minimum: " + str(round(min_ac, 4)) + "%")
-    print ("Bayes Accuracy Time: " + str(round(end - start, 4)) + " seconds")
     print ("Random Accuracy Average: " + str(round(rand_avg_ac, 4)) + "%")
     print ("Random Accuracy Maximum: " + str(round(rand_max_ac, 4)) + "%")
     print ("Random Accuracy Minimum: " + str(round(rand_min_ac, 4)) + "%")
