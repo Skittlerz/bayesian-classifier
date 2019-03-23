@@ -4,7 +4,16 @@
 
 import csv
 from random import randint
+import time
 from time import process_time
+
+import numpy as np
+import pandas as pd 
+import sklearn
+from sklearn.naive_bayes import GaussianNB, MultinomialNB
+from sklearn.model_selection import train_test_split
+
+
 
 ### USEFUL UTILITY FUNCTIONS ###
 
@@ -124,8 +133,53 @@ def test():
     ac = getAccuracy(dataset, preds)
     assert (ac and ac == 100.0)
 
+def benchmark():
+    #Modified data has headers for pandas data frame
+    dataset = pd.read_csv("datasets/flags/flag-Pandas.data")
+    X_train, X_test = train_test_split(dataset, test_size=0.3, random_state=int(time.time()))
+    gnb = GaussianNB()
+    features = [
+        'Landmass',
+        'Zone',
+        'Area',
+        'Population',
+        'Language',
+        'Bars',
+        'Stripes',
+        'Colours',
+        'Red',
+        'Green',
+        'Blue',
+        'Gold',
+        'White',
+        'Black',
+        'Orange',
+        'Mainhue',
+        'Circles',
+        'Crosses',
+        'Saltires',
+        'Quarters',
+        'Sunstars',
+        'Crescent',
+        'Triangle',
+        'Icon',
+        'Animate',
+        'Text'
+        ]
+    gnb.fit(X_train[features].values, X_train['Religion'])
+    y_pred = gnb.predict(X_test[features])
+    # Print results
+    #print("Benchmark: Number of mislabeled points out of a total %d points : %d"
+     # % (X_test.shape[0],(X_test['Religion'] != y_pred).sum()))
+    #print ( "Benchmark Accuracy: ", round(100*(1-(X_test['Religion'] != y_pred).sum()/X_test.shape[0]), 4), '%')
+    return 100*(1-(X_test['Religion'] != y_pred).sum()/X_test.shape[0])
+ 
+  
+
+
 # main
 def main():
+    
     dataset = importDataFromCSV("datasets/flags/flag.data")
     num_trials = 100
     target = 6
@@ -135,6 +189,9 @@ def main():
     rand_max_ac = 0
     rand_min_ac = 100
     rand_avg_ac = 0
+    benchmark_max_ac = 0
+    benchmark_min_ac = 100
+    benchmark_avg_ac = 0
     start = process_time()
     for i in range(num_trials):
         train, test = splitTrainingTesting(dataset)
@@ -167,6 +224,19 @@ def main():
     print ("Random Accuracy Maximum: " + str(round(rand_max_ac, 4)) + "%")
     print ("Random Accuracy Minimum: " + str(round(rand_min_ac, 4)) + "%")
     print ("Random Accuracy Time: " + str(round(rand_end - rand_start, 4)) + " seconds")
+    benchmark_start = process_time()
+    for i in range(num_trials):
+        benchmark_accuracy = benchmark()
+        benchmark_avg_ac += benchmark_accuracy / num_trials
+        if benchmark_max_ac < benchmark_accuracy:
+            benchmark_max_ac = benchmark_accuracy
+        if benchmark_min_ac > benchmark_accuracy:
+            benchmark_min_ac = benchmark_accuracy
+    benchmark_end = process_time()
+    print ("Benchmark Accuracy Average: " + str(round(benchmark_avg_ac, 4)) + "%")
+    print ("Benchmark Accuracy Maximum: " + str(round(benchmark_max_ac, 4)) + "%")
+    print ("Benchmark Accuracy Minimum: " + str(round(benchmark_min_ac, 4)) + "%")
+    print ("Benchmark Accuracy Time: " + str(round(benchmark_end - benchmark_start, 4)) + " seconds")
 
-test() 
+test()
 main() 
