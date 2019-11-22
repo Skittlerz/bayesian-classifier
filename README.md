@@ -8,6 +8,7 @@ To Run:
   Increase accuracy
 
 # notes
+  - Research paper is found here: https://github.com/Skittlerz/bayesian-classifier/blob/master/Suns%2C%20Stars%2C%20Stripes%20and%20Crosses_%20Predicting%20Religion%20from%20Flags%20Using%20Bayesian%20Classifiers.pdf
   - Naive bayesian classifier implementation
   - Currently built for use with predicting religion based on flag data but able to be extended to any type of data
   - Uses the following libraries: csv, random, and time
